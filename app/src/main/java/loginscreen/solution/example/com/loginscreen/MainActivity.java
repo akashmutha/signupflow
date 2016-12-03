@@ -1,9 +1,9 @@
 package loginscreen.solution.example.com.loginscreen;
 
-import android.app.ProgressDialog;
-import android.content.ContentValues;
 import android.content.Intent;
+import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.PersistableBundle;
 import android.support.v7.app.AppCompatActivity;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -14,139 +14,49 @@ import android.widget.LinearLayout;
 import android.widget.Toast;
 import android.widget.ViewFlipper;
 
-public class MainActivity extends AppCompatActivity {
-    ViewFlipper flipper;
-    private static final String TAG = MainActivity.class.getSimpleName();
-    static DetailsDb db;
-    static EditText tv_email, tv_password, tv_phone, tv_name;
-    static String email, password, number, name;
-    static ProgressDialog progressDialog;
+import loginscreen.solution.example.com.loginscreen.Data.local.DatabaseHelper;
+import loginscreen.solution.example.com.loginscreen.Model.User;
+import loginscreen.solution.example.com.loginscreen.Util.Constants;
+
+public class MainActivity extends AppCompatActivity implements View.OnClickListener {
+
+    private LinearLayout ltButtonLayout;
+    private Button loginButton;
+    private Button signupButton;
+    private LinearLayout nameLayout;
+    private EditText name;
+    private LinearLayout commonLayout; // for email and password
+    private EditText email;
+    private EditText password;
+    private ViewFlipper viewFlipper;
+    private Button signInButton;
+    private Button createAccountButton;
+    private EditText phoneNumber;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.content_main);
-        flipper = (ViewFlipper) findViewById(R.id.view_flipper);
-        final Button b1 = (Button) findViewById(R.id.bt_login);
-        final Button b2 = (Button) findViewById(R.id.bt_signup);
-        final Button log = (Button) findViewById(R.id.bt_sign_in);
-        final Button signup = (Button) findViewById(R.id.bt_create);
-        boolean e = false, n = false;
-        b1.setBackgroundResource(R.color.buttoncolor);
-        tv_email = (EditText) findViewById(R.id.et_email);
-        tv_password = (EditText) findViewById(R.id.et_password);
-        tv_phone = (EditText) findViewById(R.id.et_phone);
-        tv_name = (EditText) findViewById(R.id.et_name);
-
-        final LinearLayout lt_name = (LinearLayout) findViewById(R.id.lt_name);
-        progressDialog = new ProgressDialog(MainActivity.this);
-        progressDialog.setCancelable(true);
-        db = new DetailsDb(this);
-
-        b2.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                b2.setBackgroundResource(R.color.buttoncolor);
-                b1.setBackgroundResource(R.color.white);
-                lt_name.setVisibility(View.VISIBLE);
-                flipper.setDisplayedChild(1);
-
-            }
-        });
-        b1.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                b1.setBackgroundResource(R.color.buttoncolor);
-                b2.setBackgroundResource(R.color.white);
-                lt_name.setVisibility(View.INVISIBLE);
-                flipper.setDisplayedChild(0);
-            }
-        });
-        log.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (validate_credentials()) {
-                    CheckCredentials ob = new CheckCredentials(getBaseContext());
-                    if (ob.isauthenticate(email, password)) {
-                        Intent in = new Intent(MainActivity.this, WelcomeActivity.class);
-                        in.putExtra("email", email);
-                        in.putExtra("password", password);
-                        startActivity(in);
-                    } else {
-                        Toast.makeText(MainActivity.this, R.string.loginfail, Toast.LENGTH_LONG).show();
-                    }
-                }
-            }
-        });
-
-        signup.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (validate_info()) {
-                    String name = tv_name.getText().toString();
-                    String email = tv_email.getText().toString();
-                    String password = tv_password.getText().toString();
-                    String phone = tv_phone.getText().toString();
-
-                    ContentValues values = new ContentValues();
-                    values.put(DetailsDb.USERNAME, name);
-                    values.put(DetailsDb.EMAIL, email);
-                    values.put(DetailsDb.PASSWORD, password);
-                    values.put(DetailsDb.PHONE, phone);
-                    db.insert(values);
-                }
-            }
-        });
-
+        loginButton = (Button) findViewById(R.id.bt_login);
+        signupButton = (Button) findViewById(R.id.bt_signup);
+        nameLayout = (LinearLayout) findViewById(R.id.lt_name);
+        name = (EditText) findViewById(R.id.et_name);
+        email = (EditText) findViewById(R.id.et_email);
+        password = (EditText) findViewById(R.id.et_password);
+        viewFlipper = (ViewFlipper) findViewById(R.id.view_flipper);
+        signInButton = (Button) findViewById(R.id.bt_sign_in);
+        phoneNumber = (EditText) findViewById(R.id.et_phone);
+        createAccountButton = (Button) findViewById(R.id.bt_create);
+        loginButton.setOnClickListener(this);
+        signupButton.setOnClickListener(this);
+        signInButton.setOnClickListener(this);
+        createAccountButton.setOnClickListener(this);
     }
 
-    public static boolean validate_credentials() {
-        email = tv_email.getText().toString();
-        password = tv_password.getText().toString();
-        if (email.isEmpty() || !android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
-            tv_email.setError("Invalid Email");
-            return false;
-        }
-        if (password.isEmpty()) {
-            tv_password.setError("Password can be empty!!");
-            return false;
-        }
-        return true;
-    }
 
-    public static boolean validate_info() {
-
-        email = tv_email.getText().toString();
-        password = tv_password.getText().toString();
-        number = tv_phone.getText().toString();
-        name = tv_name.getText().toString();
-
-        String regexm = "^[0-9]{10}$";
-        String regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*(_|[^\\w])).+$";
-        boolean valid = true;
-        if (name.isEmpty())
-            tv_name.setError("Name can't be empty");
-        else tv_name.setError(null);
-        if (email.isEmpty() || !android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
-            tv_email.setError("Invalid Email");
-            valid = false;
-        } else
-            tv_email.setError(null);
-        if (number.isEmpty() || number.length() != 10 || !number.matches(regexm)) {
-            tv_phone.setError("Invalid Phone");
-            valid = false;
-        } else
-            tv_phone.setError(null);
-        if (password.isEmpty() || !password.matches(regexp)) {
-
-            tv_password.setError("Password must contain one uppercase,one lowercase,1 digit and one special character");
-            valid = false;
-        } else if (password.length() < 6)
-            tv_password.setError("Password should be atleast 6 characters long");
-        else
-            tv_password.setError(null);
-
-        return valid;
+    @Override
+    protected void onRestoreInstanceState(Bundle savedInstanceState) {
+        super.onRestoreInstanceState(savedInstanceState);
     }
 
     @Override
@@ -169,5 +79,132 @@ public class MainActivity extends AppCompatActivity {
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    public void onSaveInstanceState(Bundle outState, PersistableBundle outPersistentState) {
+        super.onSaveInstanceState(outState, outPersistentState);
+    }
+
+    @Override
+    public void onClick(View v) {
+        switch (v.getId()) {
+
+            case R.id.bt_login:
+                if (viewFlipper.getDisplayedChild() != 0) {
+                    viewFlipper.showPrevious();
+                    nameLayout.setVisibility(View.INVISIBLE);
+                }
+                break;
+
+            case R.id.bt_sign_in:
+                if (email != null && email.getText() != null && password != null
+                        && password.getText() != null) {
+                    loginUser();
+                } else {
+                    Toast.makeText(getApplicationContext(), getResources()
+                            .getString(R.string.loginfail), Toast.LENGTH_SHORT).show();
+                }
+                break;
+
+            case R.id.bt_signup:
+                if (viewFlipper.getDisplayedChild() != 1) {
+                    viewFlipper.showNext();
+                    nameLayout.setVisibility(View.VISIBLE);
+                }
+                break;
+
+            case R.id.bt_create:
+                // process fields on the background thread
+                String error_msg = null;
+                if (!validateName()) {
+                    error_msg = "Name is not valid!";
+                } else if (!validateEmail()) {
+                    error_msg = "Email is not valid !";
+                } else if (!vaildatePhoneNumber()) {
+                    error_msg = "Phone number is not valid";
+                } else if (!validatePassword()) {
+                    error_msg = "Password is not valid";
+                }
+                if (error_msg == null) {
+                    insertUser();
+                } else {
+                    Toast.makeText(getApplicationContext(), error_msg, Toast.LENGTH_SHORT).show();
+                }
+                break;
+
+            default:
+                break;
+        }
+    }
+
+    private boolean validateFields() {
+        return validateName() && validateEmail() && validatePassword() && vaildatePhoneNumber();
+    }
+
+    private boolean validateEmail() {
+        return !(email == null || !email.getText().toString()
+                .matches(Constants.VALID_EMAIL_ADDRESS_REGEX));
+    }
+
+    private boolean vaildatePhoneNumber() {
+        return !(phoneNumber == null || !phoneNumber.getText().toString()
+                .matches(Constants.VALID_PHONE_NUMBER_REGEX));
+    }
+
+    private boolean validatePassword() {
+        return !(password == null || !password.getText().toString()
+                .matches(Constants.VALID_PASSWORD_REGEX));
+    }
+
+    private boolean validateName() {
+        return !(name == null || !name.getText().toString()
+                .matches(Constants.VALID_NAME_REGEX));
+    }
+
+    private void insertUser(){
+        new AsyncTask<String, Integer, String>() {
+            @Override
+            protected String doInBackground(String... params) {
+                User user = new User();
+                user.setName(params[0]);
+                user.setEmailId(params[1]);
+                user.setPhoneNumber(params[2]);
+                user.setPassword(params[3]);
+                return DatabaseHelper.getHelper(getApplicationContext())
+                        .insertUser(user);
+            }
+
+            @Override
+            protected void onPostExecute(String s) {
+                super.onPostExecute(s);
+                Toast.makeText(getApplicationContext(), s, Toast.LENGTH_SHORT).show();
+            }
+        }.execute(name.getText().toString(), email.getText().toString()
+                , phoneNumber.getText().toString(), password.getText().toString());
+    }
+
+    private void loginUser(){
+        new AsyncTask<String, Integer, User>() {
+            @Override
+            protected User doInBackground(String... params) {
+                return DatabaseHelper.getHelper(getApplicationContext())
+                        .getAuthorisedUser(params[0], params[1]);
+            }
+
+            @Override
+            protected void onPostExecute(User user) {
+                super.onPostExecute(user);
+                if (user == null) {
+                    Toast.makeText(getApplicationContext(), getApplicationContext()
+                                    .getResources().getString(R.string.loginfail),
+                            Toast.LENGTH_SHORT).show();
+                } else {
+                    Intent in = new Intent(MainActivity.this, LoginWelcomeActivity.class);
+                    in.putExtra("email_id", user.getEmailId());
+                    startActivity(in);
+                }
+            }
+        }.execute(email.getText().toString(), password.getText().toString());
     }
 }
